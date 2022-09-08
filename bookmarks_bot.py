@@ -1,10 +1,9 @@
+import exceptions
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
-import exceptions
 import bookmarks
-import asyncio
 import os
 
 bot = Bot(token=os.getenv('BOT_TOKEN'))
@@ -13,7 +12,7 @@ dp = Dispatcher(bot)
 def get_keyboard_del(bookmarks_user: tuple) -> tuple:
     '''Генерация клавиатуры для удаления закладки'''
     keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
-    buttons = (types.InlineKeyboardButton(text=bookmark[1], callback_data=f'del_{bookmark[0]}') 
+    buttons = (types.InlineKeyboardButton(text=bookmark[1], callback_data=f'del_{bookmark[0]}')
                for bookmark in bookmarks_user)
     keyboard_markup.add(*buttons)
     return keyboard_markup
@@ -21,14 +20,15 @@ def get_keyboard_del(bookmarks_user: tuple) -> tuple:
 def get_keyboard_mangas(bookmarks_user: tuple) -> tuple:
     '''Генерация клавиатуры с ссылками на мангу'''
     keyboard_markup = types.InlineKeyboardMarkup(row_width=1)
-    buttons = (types.InlineKeyboardButton(text=f'{bookmark[1]}.\nГлава {bookmark[2]}', url=bookmark[3]) 
+    buttons = (types.InlineKeyboardButton(text=f'{bookmark[1]}.\nГлава {bookmark[2]}',
+                                          url=bookmark[3])
             for bookmark in bookmarks_user)
     keyboard_markup.add(*buttons)
     return keyboard_markup
 
 answers_comands = {
     'all': ('Ваш список закладок:', get_keyboard_mangas),
-    'del': ('Выберите закладку, которую хотите удалить:', get_keyboard_del) 
+    'del': ('Выберите закладку, которую хотите удалить:', get_keyboard_del)
     }
 
 @dp.message_handler(commands=['start','help'])
@@ -61,8 +61,8 @@ async def add_bookmark(message: types.Message):
         answer_message = await bookmarks.add_bookmark(message.chat.id, message.text)
     except (exceptions.NotCorrectMessage, exceptions.NotCorrectUrl,
             exceptions.TechnicalWorks, exceptions.MangaStoppedReleased,
-            exceptions.MangaComplete) as e:
-        await message.answer(str(e))
+            exceptions.MangaComplete) as exc:
+        await message.answer(str(exc))
         return
     await message.answer(answer_message)
 

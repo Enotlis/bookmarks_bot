@@ -1,13 +1,13 @@
 import re
-import db
 import exceptions
-import schedule
 import asyncio
 from typing import NamedTuple
+import queue
+import schedule
 from bs4 import BeautifulSoup
 import aiohttp
-import queue
 import psycopg2
+import db
 from bookmarks_bot import send_notify
 
 class MangaInfo(NamedTuple):
@@ -16,7 +16,7 @@ class MangaInfo(NamedTuple):
     last_chapte: str
 
 async def _get_chats_id(url_manga: str) -> tuple:
-    """Получает список всех чатов пользователей у которых 
+    """Получает список всех чатов пользователей у которых
         манга находится в закладках"""
     conn = await db.connect_db()
     rows = await conn.fetch("SELECT chat_id FROM bookmark "
@@ -30,7 +30,7 @@ async def _get_chats_id(url_manga: str) -> tuple:
 async def _notify_users(url_manga: str, message: str):
     '''Уведомляет пользователей о статусе манги'''
     chats_id = await _get_chats_id(url_manga)
-    
+
     if chats_id:
         await asyncio.gather(*[
                     send_notify(chat_id, message)
@@ -54,7 +54,7 @@ async def parse_manga_page(url_manga: str)->MangaInfo:
     info_of_manga = page_soup.find('div', class_='b-entry-info').text
     name_manga = page_soup.find('div', class_='titleBar').text.strip('\n')
     info_of_chapters = page_soup.find('div', class_='c-info-right').text
-    
+
     regexp_result = re.search(r'Глава \d{1,4}\.?\d{1,3}', info_of_chapters)
     if regexp_result is not None:
         number_chapter = regexp_result[0].split(' ')[1]
@@ -82,7 +82,7 @@ async def check_update_mangas(mangas: queue.Queue):
         try:
             manga_info = await parse_manga_page(url_manga)
             if last_chapte != manga_info.last_chapte:
-                await db.update('manga',{
+                await db.update('manga', {
                                 'last_chapte': manga_info.last_chapte,
                                 'url_manga': url_manga
                 })
@@ -91,8 +91,8 @@ async def check_update_mangas(mangas: queue.Queue):
                            f"<a href='{url_manga}'>Читать</a>")
                 await _notify_users(url_manga, message)
         except (exceptions.MangaStoppedReleased,
-                exceptions.MangaComplete) as e:
-            await _notify_users(url_manga, str(e))
+                exceptions.MangaComplete) as exc:
+            await _notify_users(url_manga, str(exc))
             await db.delete('manga',
                             'url_manga',
                             url_manga)
@@ -121,6 +121,6 @@ def main():
 
 if __name__ == "__main__":
     schedule.every(6).hours.do(main).run()
-    
+
     while True:
         schedule.run_pending()

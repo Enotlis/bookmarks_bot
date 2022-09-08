@@ -1,22 +1,21 @@
 import re
+import exceptions
 import db
 import parse_mangalib
-import exceptions
-import asyncio
-from typing import NamedTuple
+
 
 async def add_bookmark(chat_id: int, raw_message: str) -> str:
     """Добавляет мангу в закладки"""
     url_manga = _parse_message(raw_message)
     conn = await db.connect_db()
 
-    result = await conn.execute("SELECT * FROM bookmark " 
+    result = await conn.execute("SELECT * FROM bookmark "
                     f"WHERE manga_id='{url_manga}' AND "
                     f"chat_id='{chat_id}'")
     if result[-1] == '1':
-        return f"Mанга уже есть в закладках"
+        return "Mанга уже есть в закладках"
 
-    result = await conn.fetchrow("SELECT manga_name FROM manga " 
+    result = await conn.fetchrow("SELECT manga_name FROM manga "
                     f"WHERE url_manga='{url_manga}'")
     await conn.close()
 
@@ -25,7 +24,7 @@ async def add_bookmark(chat_id: int, raw_message: str) -> str:
     else:
         manga_name = result[0]
 
-    await db.insert("bookmark",{
+    await db.insert("bookmark", {
                 'chat_id': chat_id,
                 'manga_id': url_manga
     })
@@ -62,7 +61,7 @@ async def delete_bookmark(chat_id: str, id_row: str) -> str:
                    'id',
                    id_row)
 
-    return 'Манга удалена из закладок'    
+    return 'Манга удалена из закладок'
 
 async def _add_manga(url_manga: str) -> str:
     """Добавлет мангу в БД"""

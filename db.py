@@ -51,8 +51,8 @@ def _init_db(conn):
     """инициализирует БД"""
     cursor = conn.cursor()
 
-    with open('createdb.sql','r') as f:
-        sql = f.read()
+    with open('createdb.sql','r') as db_file:
+        sql = db_file.read()
     cursor.execute(sql)
     conn.commit()
     conn.close()
