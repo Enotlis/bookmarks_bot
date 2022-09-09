@@ -46,6 +46,7 @@ async def get_list_bookmarks(message: types.Message):
     bookmarks_user = await bookmarks.get_bookmarks_user(message.chat.id)
     if not bookmarks_user:
         await message.answer("У вас пока нет манги в закладках =(")
+        return
 
     await message.answer(answers_comands[message.text[1:4]][0],
                          reply_markup=answers_comands[message.text[1:4]][1](bookmarks_user))
